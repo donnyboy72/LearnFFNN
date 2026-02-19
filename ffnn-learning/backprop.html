@@ -1,0 +1,205 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>FFNN Guide: Backpropagation</title>
+    <link rel="stylesheet" href="style.css">
+    <link rel="manifest" href="manifest.json">
+    <link rel="icon" type="image/svg+xml" href="./icons/icon.svg">
+    <style>
+        .derivation-step {
+            border-left: 3px solid var(--secondary-color);
+            padding-left: 20px;
+            margin: 20px 0;
+        }
+        .gradient-display {
+            font-family: monospace;
+            background: #222;
+            padding: 10px;
+            margin: 5px 0;
+            border-radius: 4px;
+        }
+        .positive-grad { color: #ff4081; } /* Gradient pushing up */
+        .negative-grad { color: #00bcd4; } /* Gradient pushing down */
+    </style>
+</head>
+<body>
+    <div id="sidebar">
+        <h2>FFNN Guide</h2>
+        <nav>
+            <a href="index.html">1. Overview</a>
+            <a href="math.html">2. Math Foundations</a>
+            <a href="forward-pass.html">3. Forward Pass</a>
+            <a href="backprop.html" class="active">4. Backpropagation</a>
+            <a href="java-implementation.html">5. Java Implementation</a>
+        </nav>
+    </div>
+
+    <div id="main-content">
+        <h1>Backpropagation</h1>
+        
+        <p>
+            <strong>Backpropagation</strong> (Backward Propagation of Errors) is how neural networks learn. 
+            It calculates the gradient (slope) of the Loss Function with respect to every weight and bias in the network.
+        </p>
+
+        <h2>1. The Loss Function</h2>
+        <p>
+            We need a way to measure how "wrong" the network is. We use <strong>Mean Squared Error (MSE)</strong> 
+            (often with a 1/2 factor to make derivatives cleaner).
+        </p>
+        <div class="math-block">
+            L = ½(target - output)²
+        </div>
+
+        <h2>2. The Chain Rule</h2>
+        <p>
+            To find how much a weight <em>w</em> contributed to the error <em>L</em>, we use the Chain Rule of Calculus.
+        </p>
+        <div class="math-block">
+            ∂L/∂w = (∂L/∂a) * (∂a/∂z) * (∂z/∂w)
+        </div>
+
+        <h2>3. Step-by-Step Derivation</h2>
+        
+        <div class="derivation-step">
+            <h3>Output Layer Gradients</h3>
+            <p>Let <em>y</em> be the target and <em>aᴸ</em> be the output activation.</p>
+            <p><strong>Step 1:</strong> How does Loss change with Output?</p>
+            <div class="math-block">∂L/∂aᴸ = (aᴸ - y)</div>
+            
+            <p><strong>Step 2:</strong> How does Output change with Input Sum (z)? (Derivative of Sigmoid)</p>
+            <div class="math-block">∂aᴸ/∂zᴸ = σ'(zᴸ) = aᴸ(1 - aᴸ)</div>
+            
+            <p><strong>Step 3:</strong> Define "Delta" (δ) for the output layer:</p>
+            <div class="math-block">δᴸ = (aᴸ - y) * σ'(zᴸ)</div>
+
+            <p><strong>Final Gradient for Weight:</strong></p>
+            <div class="math-block">∂L/∂wᴸ = δᴸ * aᴸ⁻¹</div>
+        </div>
+
+        <div class="derivation-step">
+            <h3>Hidden Layer Gradients</h3>
+            <p>We propagate the error backwards using the weights.</p>
+            <p><strong>Step 1:</strong> Calculate Delta for hidden layer <em>l</em>:</p>
+            <div class="math-block">δˡ = (transpose(Wˡ⁺¹) · δˡ⁺¹) * σ'(zˡ)</div>
+            
+            <p><strong>Final Gradient for Weight:</strong></p>
+            <div class="math-block">∂L/∂wˡ = δˡ * aˡ⁻¹</div>
+        </div>
+
+        <h2>Interactive Gradient Descent</h2>
+        <p>
+            Adjust the Target. See how the gradients change to push the Output towards the Target.
+            <br>
+            <strong>Goal:</strong> Minimize Loss.
+        </p>
+
+        <div class="visualization-container">
+            <div style="display: flex; gap: 40px; width: 100%; justify-content: center; align-items: center; margin-bottom: 20px;">
+                <div style="text-align: center;">
+                    <h3>Current Output</h3>
+                    <div id="bp-output" style="font-size: 2em; color: var(--accent-color);">0.50</div>
+                </div>
+                <div style="font-size: 2em;">&rarr;</div>
+                <div style="text-align: center;">
+                    <h3>Target</h3>
+                    <input type="number" id="bp-target" value="1.0" step="0.1" style="font-size: 1.5em; width: 80px; text-align: center;">
+                </div>
+            </div>
+
+            <div style="width: 100%; text-align: center; margin-bottom: 20px;">
+                <strong>Loss: <span id="bp-loss" style="color: var(--secondary-color);">0.125</span></strong>
+            </div>
+
+            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 20px; width: 100%;">
+                <div>
+                    <h4>Gradients (Output Layer)</h4>
+                    <div id="grad-output" class="gradient-display">Loading...</div>
+                </div>
+                <div>
+                    <h4>Updated Weights (New W = W - η * ∇)</h4>
+                    <div id="new-weights" class="gradient-display">Loading...</div>
+                </div>
+            </div>
+
+            <button id="step-btn" style="margin-top: 20px; width: 100%;">Perform One Training Step (Learning Rate = 0.5)</button>
+        </div>
+
+        <div class="visualization-container" style="align-items: flex-start; margin-top: 40px;">
+            <p><strong>Quiz:</strong> If increasing weight <em>w</em> causes the Loss <em>L</em> to increase, what is the sign of the gradient ∂L/∂w?</p>
+            <button onclick="alert('Correct! The slope is positive. To reduce loss, we must subtract this positive value (move left).')">Positive</button>
+            <button onclick="alert('Incorrect. If the gradient were negative, increasing w would decrease L.')">Negative</button>
+            <button onclick="alert('Incorrect.')">Zero</button>
+        </div>
+
+        <div style="text-align: right; margin-top: 50px;">
+            <a href="java-implementation.html" style="background: var(--accent-color); color: #000; padding: 10px 20px; text-decoration: none; border-radius: 4px; font-weight: bold;">Next: Java Implementation &rarr;</a>
+        </div>
+    </div>
+
+    <!-- Core Scripts -->
+    <script src="modules/matrix.js"></script>
+    <script src="modules/visualizer.js"></script>
+    <script src="modules/interactive.js"></script>
+    <script src="main.js"></script>
+
+    <script>
+        let w = 0.5;
+        let b = 0.0;
+        const x = 1.0;
+        const lr = 0.5;
+
+        function sigmoid(z) { return 1 / (1 + Math.exp(-z)); }
+        function dSigmoid(a) { return a * (1 - a); }
+
+        function updateSimulation() {
+            const target = parseFloat(document.getElementById('bp-target').value);
+            
+            const z = w * x + b;
+            const a = sigmoid(z);
+            const loss = 0.5 * Math.pow(target - a, 2);
+            
+            const dL_da = a - target;
+            const da_dz = dSigmoid(a);
+            const delta = dL_da * da_dz;
+            
+            const dL_dw = delta * x;
+            const dL_db = delta * 1.0;
+
+            document.getElementById('bp-output').textContent = a.toFixed(4);
+            document.getElementById('bp-loss').textContent = loss.toFixed(6);
+
+            const gradSign = dL_dw > 0 ? '+' : '';
+            
+            document.getElementById('grad-output').innerHTML = 
+                `∂L/∂w = ${gradSign}${dL_dw.toFixed(4)}<br>` +
+                `∂L/∂b = ${gradSign}${dL_db.toFixed(4)}<br>` +
+                `<small style="color:#aaa">(If positive, decrease w. If negative, increase w.)</small>`;
+
+            const new_w = w - lr * dL_dw;
+            const new_b = b - lr * dL_db;
+
+            document.getElementById('new-weights').innerHTML = 
+                `w_new = ${w.toFixed(4)} - (0.5 * ${dL_dw.toFixed(4)}) = <strong>${new_w.toFixed(4)}</strong><br>` +
+                `b_new = ${b.toFixed(4)} - (0.5 * ${dL_db.toFixed(4)}) = <strong>${new_b.toFixed(4)}</strong>`;
+
+            return { new_w, new_b };
+        }
+
+        const inputTarget = document.getElementById('bp-target');
+        inputTarget.addEventListener('input', updateSimulation);
+        
+        const stepBtn = document.getElementById('step-btn');
+        stepBtn.addEventListener('click', () => {
+            const result = updateSimulation();
+            w = result.new_w;
+            b = result.new_b;
+            updateSimulation(); 
+        });
+
+        updateSimulation();
+    </script>
+</body>
+</html>

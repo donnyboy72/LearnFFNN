@@ -1,0 +1,231 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>FFNN Guide: Forward Pass</title>
+    <link rel="stylesheet" href="style.css">
+    <link rel="manifest" href="manifest.json">
+    <link rel="icon" type="image/svg+xml" href="./icons/icon.svg">
+    <style>
+        .calc-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+            gap: 20px;
+            margin-bottom: 20px;
+        }
+        .matrix-input {
+            display: inline-block;
+            vertical-align: middle;
+            background: #222;
+            padding: 10px;
+            border-radius: 5px;
+            text-align: center;
+        }
+        input[type="number"] {
+            width: 60px;
+            background: #333;
+            color: #fff;
+            border: 1px solid #555;
+            padding: 5px;
+            margin: 2px;
+            text-align: center;
+        }
+        .result-box {
+            background: #1e1e1e;
+            border: 1px solid var(--accent-color);
+            padding: 15px;
+            margin-top: 10px;
+            font-family: monospace;
+            white-space: pre-wrap;
+        }
+        .step-label {
+            font-weight: bold;
+            color: var(--accent-color);
+            margin-top: 10px;
+            display: block;
+        }
+    </style>
+</head>
+<body>
+    <div id="sidebar">
+        <h2>FFNN Guide</h2>
+        <nav>
+            <a href="index.html">1. Overview</a>
+            <a href="math.html">2. Math Foundations</a>
+            <a href="forward-pass.html" class="active">3. Forward Pass</a>
+            <a href="backprop.html">4. Backpropagation</a>
+            <a href="java-implementation.html">5. Java Implementation</a>
+        </nav>
+    </div>
+
+    <div id="main-content">
+        <h1>The Forward Pass</h1>
+        
+        <p>
+            The <strong>Forward Pass</strong> is the process of calculating the output of a neural network given an input.
+            It is a sequence of matrix multiplications and activation functions.
+        </p>
+
+        <div class="math-block">
+            <h3>Algorithm</h3>
+            <p>For each layer <em>l</em> from 1 to L:</p>
+            <p>
+                1. Calculate weighted sum (z): <br>
+                &nbsp;&nbsp;&nbsp; <strong>zˡ = Wˡ · aˡ⁻¹ + bˡ</strong>
+            </p>
+            <p>
+                2. Apply activation function (a): <br>
+                &nbsp;&nbsp;&nbsp; <strong>aˡ = σ(zˡ)</strong>
+            </p>
+            <p>(Where a⁰ is the input x)</p>
+        </div>
+
+        <h2>Interactive Step-by-Step Calculation</h2>
+        <p>
+            Modify the values below to see how the signal propagates through a small network (2 Inputs -> 2 Hidden -> 1 Output).
+            <br>
+            Using <strong>Sigmoid</strong> activation.
+        </p>
+
+        <div class="visualization-container" style="align-items: stretch;">
+            
+            <div class="calc-grid">
+                <!-- Inputs -->
+                <div>
+                    <h4>Input (x)</h4>
+                    <div class="matrix-input">
+                        <input type="number" id="x1" value="0.5" step="0.1"><br>
+                        <input type="number" id="x2" value="0.8" step="0.1">
+                    </div>
+                </div>
+
+                <!-- Layer 1 Weights -->
+                <div>
+                    <h4>Weights Layer 1 (W¹)</h4>
+                    <div class="matrix-input">
+                        <input type="number" id="w1_11" value="0.2"> <input type="number" id="w1_12" value="0.4"><br>
+                        <input type="number" id="w1_21" value="-0.5"> <input type="number" id="w1_22" value="0.3">
+                    </div>
+                </div>
+
+                <!-- Layer 1 Biases -->
+                <div>
+                    <h4>Biases Layer 1 (b¹)</h4>
+                    <div class="matrix-input">
+                        <input type="number" id="b1_1" value="0.1"><br>
+                        <input type="number" id="b1_2" value="-0.2">
+                    </div>
+                </div>
+            </div>
+
+            <div class="result-box" id="layer1-results">
+                Calculating...
+            </div>
+
+            <div class="calc-grid" style="margin-top: 30px;">
+                 <!-- Layer 2 Weights -->
+                 <div>
+                    <h4>Weights Layer 2 (W²)</h4>
+                    <div class="matrix-input">
+                        <input type="number" id="w2_11" value="0.6"> <input type="number" id="w2_12" value="-0.1">
+                    </div>
+                </div>
+
+                <!-- Layer 2 Biases -->
+                <div>
+                    <h4>Bias Layer 2 (b²)</h4>
+                    <div class="matrix-input">
+                        <input type="number" id="b2_1" value="0.05">
+                    </div>
+                </div>
+            </div>
+
+            <div class="result-box" id="layer2-results">
+                Calculating...
+            </div>
+
+        </div>
+
+        <h2>Code Logic</h2>
+        <pre><code class="language-java">// Java-like pseudocode
+Matrix a = input;
+for (Layer layer : layers) {
+    Matrix z = layer.weights.multiply(a).add(layer.biases);
+    a = z.map(sigmoid); // Activation
+}
+return a;</code></pre>
+
+        <div class="visualization-container" style="align-items: flex-start; margin-top: 40px;">
+            <p><strong>Quiz:</strong> If the Input vector is size 1x3 and the Weight matrix is size 3x4, what is the shape of the resulting output vector?</p>
+            <button onclick="alert('Correct! (1x3) * (3x4) = (1x4).')">1x4</button>
+            <button onclick="alert('Incorrect.')">3x1</button>
+            <button onclick="alert('Incorrect.')">4x3</button>
+        </div>
+
+        <div style="text-align: right; margin-top: 50px;">
+            <a href="backprop.html" style="background: var(--accent-color); color: #000; padding: 10px 20px; text-decoration: none; border-radius: 4px; font-weight: bold;">Next: Backpropagation &rarr;</a>
+        </div>
+    </div>
+
+    <!-- Core Scripts -->
+    <script src="modules/matrix.js"></script>
+    <script src="modules/visualizer.js"></script>
+    <script src="modules/interactive.js"></script>
+    <script src="main.js"></script>
+
+    <script>
+        function sigmoid(x) { return 1 / (1 + Math.exp(-x)); }
+        
+        function updateCalc() {
+            // Inputs
+            const x1 = parseFloat(document.getElementById('x1').value);
+            const x2 = parseFloat(document.getElementById('x2').value);
+
+            // Layer 1
+            const w1_11 = parseFloat(document.getElementById('w1_11').value);
+            const w1_12 = parseFloat(document.getElementById('w1_12').value);
+            const w1_21 = parseFloat(document.getElementById('w1_21').value);
+            const w1_22 = parseFloat(document.getElementById('w1_22').value);
+            
+            const b1_1 = parseFloat(document.getElementById('b1_1').value);
+            const b1_2 = parseFloat(document.getElementById('b1_2').value);
+
+            // Calculation z1
+            const z1_1 = (w1_11 * x1) + (w1_12 * x2) + b1_1;
+            const z1_2 = (w1_21 * x1) + (w1_22 * x2) + b1_2;
+
+            const a1_1 = sigmoid(z1_1);
+            const a1_2 = sigmoid(z1_2);
+
+            document.getElementById('layer1-results').innerHTML = 
+            `<span class="step-label">Step 1: Calculate z¹</span>\n` +
+            `z¹₁ = (${w1_11} * ${x1}) + (${w1_12} * ${x2}) + ${b1_1} = <strong>${z1_1.toFixed(4)}</strong>\n` +
+            `z¹₂ = (${w1_21} * ${x1}) + (${w1_22} * ${x2}) + ${b1_2} = <strong>${z1_2.toFixed(4)}</strong>\n\n` +
+            `<span class="step-label">Step 2: Apply Activation σ(z¹)</span>\n` +
+            `a¹₁ = sigmoid(${z1_1.toFixed(4)}) = <strong>${a1_1.toFixed(4)}</strong>\n` +
+            `a¹₂ = sigmoid(${z1_2.toFixed(4)}) = <strong>${a1_2.toFixed(4)}</strong>`;
+
+            // Layer 2
+            const w2_11 = parseFloat(document.getElementById('w2_11').value);
+            const w2_12 = parseFloat(document.getElementById('w2_12').value);
+            const b2_1 = parseFloat(document.getElementById('b2_1').value);
+
+            // Calculation z2
+            const z2_1 = (w2_11 * a1_1) + (w2_12 * a1_2) + b2_1;
+            const a2_1 = sigmoid(z2_1);
+
+            document.getElementById('layer2-results').innerHTML = 
+            `<span class="step-label">Step 3: Calculate z² (using a¹ from Step 2)</span>\n` +
+            `z²₁ = (${w2_11} * ${a1_1.toFixed(4)}) + (${w2_12} * ${a1_2.toFixed(4)}) + ${b2_1} = <strong>${z2_1.toFixed(4)}</strong>\n\n` +
+            `<span class="step-label">Step 4: Final Output a²</span>\n` +
+            `ŷ = sigmoid(${z2_1.toFixed(4)}) = <strong style="color: #00bcd4; font-size: 1.2em;">${a2_1.toFixed(4)}</strong>`;
+        }
+
+        const inputs = document.querySelectorAll('input[type="number"]');
+        inputs.forEach(inp => inp.addEventListener('input', updateCalc));
+        
+        updateCalc();
+    </script>
+</body>
+</html>

@@ -1,0 +1,168 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>FFNN Guide: Overview</title>
+    <link rel="stylesheet" href="style.css">
+    <link rel="manifest" href="manifest.json">
+    <meta name="theme-color" content="#00bcd4">
+    <link rel="icon" type="image/svg+xml" href="./icons/icon.svg">
+</head>
+<body>
+    <div id="sidebar">
+        <h2>FFNN Guide</h2>
+        <nav>
+            <a href="index.html" class="active">1. Overview</a>
+            <a href="math.html">2. Math Foundations</a>
+            <a href="forward-pass.html">3. Forward Pass</a>
+            <a href="backprop.html">4. Backpropagation</a>
+            <a href="java-implementation.html">5. Java Implementation</a>
+        </nav>
+    </div>
+
+    <div id="main-content">
+        <h1>Introduction to Feedforward Neural Networks</h1>
+        
+        <p>
+            A <strong>Feedforward Neural Network (FFNN)</strong> is the foundational architecture of deep learning. 
+            Inspired loosely by the human brain, it consists of layers of artificial "neurons" that process information 
+            in a single direction—from input to output.
+        </p>
+
+        <h2>Biological Inspiration vs. Artificial Reality</h2>
+        <p>
+            While biological neurons transmit electrochemical signals via synapses, artificial neurons are simply 
+            mathematical functions. They take a set of numbers (inputs), multiply them by "weights" (importance), 
+            add a "bias" (threshold), and pass the result through an "activation function" to determine the output.
+        </p>
+
+        <h2>Interactive Visualization</h2>
+        <p>
+            Below is a simple <strong>2-3-1 Network</strong> (2 inputs, 3 hidden neurons, 1 output). 
+            Adjust the inputs to see how the signal propagates forward.
+        </p>
+
+        <div class="visualization-container">
+            <canvas id="network-canvas" width="600" height="400"></canvas>
+            
+            <div class="controls">
+                <div class="control-group">
+                    <label for="input1">Input 1 (x₁): <span id="input1-val">0.5</span></label>
+                    <input type="range" id="input1" min="0" max="1" step="0.01" value="0.5">
+                </div>
+                <div class="control-group">
+                    <label for="input2">Input 2 (x₂): <span id="input2-val">0.5</span></label>
+                    <input type="range" id="input2" min="0" max="1" step="0.01" value="0.5">
+                </div>
+            </div>
+            
+            <div style="margin-top: 20px; font-family: monospace;">
+                <strong>Output (ŷ): <span id="output-val" style="color: #00bcd4;">0.00</span></strong>
+            </div>
+        </div>
+
+        <h2>Key Concepts</h2>
+        
+        <div class="math-block">
+            <h3>1. Layers</h3>
+            <ul>
+                <li><strong>Input Layer:</strong> Receives raw data (e.g., pixel values, sensor readings). No computation happens here.</li>
+                <li><strong>Hidden Layers:</strong> Where the "magic" happens. They extract features and patterns. "Deep" learning just means many hidden layers.</li>
+                <li><strong>Output Layer:</strong> Produces the final prediction (e.g., probability of "cat").</li>
+            </ul>
+        </div>
+
+        <div class="math-block">
+            <h3>2. Weights (W) and Biases (b)</h3>
+            <p>
+                <strong>Weights</strong> determine the strength of the connection between two neurons. 
+                If the weight is high, the input has a strong influence on the output.
+            </p>
+            <p>
+                <strong>Biases</strong> allow the neuron to shift its activation function left or right, 
+                helping it model patterns that don't pass through the origin.
+            </p>
+        </div>
+
+        <h3>Why "Feedforward"?</h3>
+        <p>
+            The information moves in only one direction: forward. From the input nodes, through the hidden nodes, 
+            and to the output nodes. There are no cycles or loops in the network (unlike Recurrent Neural Networks).
+        </p>
+
+        <h2>Test Your Understanding</h2>
+        <div class="visualization-container" style="align-items: flex-start;">
+            <p><strong>Quiz:</strong> If a network has 10 inputs and 5 neurons in the first hidden layer, how many weights connect them (ignoring biases)?</p>
+            <button onclick="alert('Correct! 10 * 5 = 50 weights.')">50</button>
+            <button onclick="alert('Incorrect. Each input connects to every hidden neuron.')">15</button>
+            <button onclick="alert('Incorrect.')">5</button>
+        </div>
+
+        <div style="text-align: right; margin-top: 50px;">
+            <a href="math.html" style="background: var(--accent-color); color: #000; padding: 10px 20px; text-decoration: none; border-radius: 4px; font-weight: bold;">Next: Mathematical Foundations &rarr;</a>
+        </div>
+    </div>
+
+    <!-- Core Scripts (Ordered by dependency) -->
+    <script src="modules/matrix.js"></script>
+    <script src="modules/visualizer.js"></script>
+    <script src="modules/interactive.js"></script>
+    <script src="main.js"></script>
+
+    <script>
+        // Initialize Visualization
+        const viz = new Visualizer('network-canvas', [2, 3, 1]);
+        
+        // Random Weights for demo
+        const W1 = new Matrix(3, 2); 
+        W1.randomize();
+        const W2 = new Matrix(1, 3);
+        W2.randomize();
+        
+        // Biases
+        const b1 = new Matrix(3, 1);
+        b1.randomize();
+        const b2 = new Matrix(1, 1);
+        b2.randomize();
+
+        viz.updateWeights([W1, W2]);
+
+        function sigmoid(x) {
+            return 1 / (1 + Math.exp(-x));
+        }
+
+        function updateNetwork() {
+            const i1 = parseFloat(document.getElementById('input1').value);
+            const i2 = parseFloat(document.getElementById('input2').value);
+            
+            // Forward Pass Logic (simplified for viz)
+            let input = Matrix.fromArray([i1, i2]);
+            
+            // Layer 1
+            let z1 = Matrix.multiply(W1, input);
+            z1.add(b1);
+            let a1 = Matrix.map(z1, sigmoid);
+            
+            // Layer 2
+            let z2 = Matrix.multiply(W2, a1);
+            z2.add(b2);
+            let a2 = Matrix.map(z2, sigmoid);
+            
+            const output = a2.data[0][0];
+            
+            // Update UI
+            document.getElementById('output-val').textContent = output.toFixed(4);
+            
+            // Update Viz
+            viz.updateActivations([input.toArray(), a1.toArray(), a2.toArray()]);
+        }
+
+        setupSlider('input1', updateNetwork);
+        setupSlider('input2', updateNetwork);
+        
+        // Initial draw
+        updateNetwork();
+    </script>
+</body>
+</html>

@@ -1,0 +1,174 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>FFNN Guide: Math Foundations</title>
+    <link rel="stylesheet" href="style.css">
+    <link rel="manifest" href="manifest.json">
+    <link rel="icon" type="image/svg+xml" href="./icons/icon.svg">
+    <style>
+        .math-concept {
+            margin-bottom: 40px;
+            border-bottom: 1px solid #333;
+            padding-bottom: 20px;
+        }
+    </style>
+</head>
+<body>
+    <div id="sidebar">
+        <h2>FFNN Guide</h2>
+        <nav>
+            <a href="index.html">1. Overview</a>
+            <a href="math.html" class="active">2. Math Foundations</a>
+            <a href="forward-pass.html">3. Forward Pass</a>
+            <a href="backprop.html">4. Backpropagation</a>
+            <a href="java-implementation.html">5. Java Implementation</a>
+        </nav>
+    </div>
+
+    <div id="main-content">
+        <h1>Mathematical Foundations</h1>
+        
+        <p>
+            To understand neural networks, you need to be comfortable with <strong>Linear Algebra</strong> and <strong>Calculus</strong>.
+            This page covers the essential concepts: Vectors, Matrices, and Activation Functions.
+        </p>
+
+        <div class="math-concept">
+            <h2>1. Vectors & Matrices</h2>
+            <p>
+                A <strong>Vector</strong> is an array of numbers. In NN context, an input layer is a vector.
+                <br>
+                A <strong>Matrix</strong> is a 2D array of numbers. Weights connecting layers form a matrix.
+            </p>
+            
+            <div class="math-block">
+                <strong>Matrix Multiplication (Dot Product):</strong>
+                <p>
+                    When we multiply a matrix <em>W</em> by a vector <em>x</em>, we get a new vector <em>z</em>.
+                    This is a <strong>Linear Transformation</strong>.
+                </p>
+                <p>
+                    z = W · x + b
+                </p>
+            </div>
+        </div>
+
+        <div class="math-concept">
+            <h2>2. Activation Functions</h2>
+            <p>
+                Activation functions introduce <strong>non-linearity</strong>. Without them, a neural network is just a linear regression model, 
+                no matter how many layers it has. They decide whether a neuron should "fire" or not.
+            </p>
+
+            <h3>Sigmoid</h3>
+            <p>Squashes values between 0 and 1. Useful for probability outputs.</p>
+            <div class="math-block">
+                σ(x) = 1 / (1 + e⁻ˣ)
+                <br>
+                σ'(x) = σ(x) * (1 - σ(x))
+            </div>
+            <div class="visualization-container">
+                <canvas id="sigmoid-canvas" width="600" height="300"></canvas>
+                <div class="controls">
+                    <label>Input x: <span id="sig-val">0.00</span></label>
+                    <input type="range" id="sig-slider" min="-5" max="5" step="0.1" value="0">
+                </div>
+                <p>Output σ(x): <strong id="sig-out">0.50</strong> | Derivative σ'(x): <strong id="sig-der">0.25</strong></p>
+            </div>
+
+            <h3>ReLU (Rectified Linear Unit)</h3>
+            <p>Most common activation function. Computationally efficient.</p>
+            <div class="math-block">
+                R(x) = max(0, x)
+                <br>
+                R'(x) = 1 if x > 0 else 0
+            </div>
+            <div class="visualization-container">
+                <canvas id="relu-canvas" width="600" height="300"></canvas>
+                <div class="controls">
+                    <label>Input x: <span id="relu-val">0.00</span></label>
+                    <input type="range" id="relu-slider" min="-5" max="5" step="0.1" value="0">
+                </div>
+                <p>Output R(x): <strong id="relu-out">0.00</strong> | Derivative R'(x): <strong id="relu-der">0</strong></p>
+            </div>
+
+            <h3>Tanh (Hyperbolic Tangent)</h3>
+            <p>Squashes values between -1 and 1. Zero-centered.</p>
+            <div class="math-block">
+                tanh(x) = (eˣ - e⁻ˣ) / (eˣ + e⁻ˣ)
+                <br>
+                tanh'(x) = 1 - tanh(x)²
+            </div>
+            <div class="visualization-container">
+                <canvas id="tanh-canvas" width="600" height="300"></canvas>
+                <div class="controls">
+                    <label>Input x: <span id="tanh-val">0.00</span></label>
+                    <input type="range" id="tanh-slider" min="-5" max="5" step="0.1" value="0">
+                </div>
+                <p>Output tanh(x): <strong id="tanh-out">0.00</strong> | Derivative tanh'(x): <strong id="tanh-der">1.00</strong></p>
+            </div>
+        </div>
+
+        <div class="visualization-container" style="align-items: flex-start; margin-top: 40px;">
+            <p><strong>Quiz:</strong> Which activation function outputs values strictly between 0 and 1, making it ideal for probabilities?</p>
+            <button onclick="alert('Correct! Sigmoid squashes values to (0, 1).')">Sigmoid</button>
+            <button onclick="alert('Incorrect. ReLU outputs [0, infinity).')">ReLU</button>
+            <button onclick="alert('Incorrect. Tanh outputs (-1, 1).')">Tanh</button>
+        </div>
+
+        <div style="text-align: right; margin-top: 50px;">
+            <a href="forward-pass.html" style="background: var(--accent-color); color: #000; padding: 10px 20px; text-decoration: none; border-radius: 4px; font-weight: bold;">Next: The Forward Pass &rarr;</a>
+        </div>
+    </div>
+
+    <!-- Core Scripts -->
+    <script src="modules/matrix.js"></script>
+    <script src="modules/visualizer.js"></script>
+    <script src="modules/interactive.js"></script>
+    <script src="main.js"></script>
+
+    <script>
+        // Sigmoid
+        const sigmoid = (x) => 1 / (1 + Math.exp(-x));
+        const dSigmoid = (x) => { let s = sigmoid(x); return s * (1 - s); };
+        
+        drawGraph('sigmoid-canvas', sigmoid, dSigmoid);
+        setupSlider('sig-slider', (val) => {
+            document.getElementById('sig-val').textContent = val.toFixed(2);
+            document.getElementById('sig-out').textContent = sigmoid(val).toFixed(4);
+            document.getElementById('sig-der').textContent = dSigmoid(val).toFixed(4);
+        });
+
+        // ReLU
+        const relu = (x) => Math.max(0, x);
+        const dRelu = (x) => x > 0 ? 1 : 0;
+        
+        drawGraph('relu-canvas', relu, dRelu);
+        setupSlider('relu-slider', (val) => {
+            document.getElementById('relu-val').textContent = val.toFixed(2);
+            document.getElementById('relu-out').textContent = relu(val).toFixed(4);
+            document.getElementById('relu-der').textContent = dRelu(val).toFixed(4);
+        });
+
+        // Tanh
+        const tanh = (x) => Math.tanh(x);
+        const dTanh = (x) => 1 - Math.pow(Math.tanh(x), 2);
+        
+        drawGraph('tanh-canvas', tanh, dTanh);
+        setupSlider('tanh-slider', (val) => {
+            document.getElementById('tanh-val').textContent = val.toFixed(2);
+            document.getElementById('tanh-out').textContent = tanh(val).toFixed(4);
+            document.getElementById('tanh-der').textContent = dTanh(val).toFixed(4);
+        });
+
+        // Handle Resize
+        window.addEventListener('resize', () => {
+             drawGraph('sigmoid-canvas', sigmoid, dSigmoid);
+             drawGraph('relu-canvas', relu, dRelu);
+             drawGraph('tanh-canvas', tanh, dTanh);
+        });
+    </script>
+</body>
+</html>

@@ -1,0 +1,328 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>FFNN Guide: Java Implementation</title>
+    <link rel="stylesheet" href="style.css">
+    <link rel="manifest" href="manifest.json">
+    <link rel="icon" type="image/svg+xml" href="./icons/icon.svg">
+</head>
+<body>
+    <div id="sidebar">
+        <h2>FFNN Guide</h2>
+        <nav>
+            <a href="index.html">1. Overview</a>
+            <a href="math.html">2. Math Foundations</a>
+            <a href="forward-pass.html">3. Forward Pass</a>
+            <a href="backprop.html">4. Backpropagation</a>
+            <a href="java-implementation.html" class="active">5. Java Implementation</a>
+        </nav>
+    </div>
+
+    <div id="main-content">
+        <h1>Building a Neural Network in Java</h1>
+        
+        <p>
+            Now that you understand the math, let's implement a Feedforward Neural Network from scratch in Java.
+            We will not use any external libraries (like TensorFlow or DL4J). We will build our own <strong>Matrix</strong> library first.
+        </p>
+
+        <h2>1. The Matrix Class</h2>
+        <p>
+            Neural networks are just matrix operations. We need a class to handle addition, subtraction, multiplication, and transposition.
+        </p>
+        <pre><code class="language-java">public class Matrix {
+    double[][] data;
+    int rows, cols;
+
+    public Matrix(int rows, int cols) {
+        this.data = new double[rows][cols];
+        this.rows = rows;
+        this.cols = cols;
+    }
+
+    public void add(Matrix m) {
+        if (cols != m.cols || rows != m.rows) {
+            System.out.println("Shape Mismatch");
+            return;
+        }
+        for (int i = 0; i < rows; i++) {
+            for (int j = 0; j < cols; j++) {
+                this.data[i][j] += m.data[i][j];
+            }
+        }
+    }
+
+    public static Matrix subtract(Matrix a, Matrix b) {
+        Matrix temp = new Matrix(a.rows, a.cols);
+        for (int i = 0; i < a.rows; i++) {
+            for (int j = 0; j < a.cols; j++) {
+                temp.data[i][j] = a.data[i][j] - b.data[i][j];
+            }
+        }
+        return temp;
+    }
+
+    public static Matrix multiply(Matrix a, Matrix b) {
+        Matrix temp = new Matrix(a.rows, b.cols);
+        for (int i = 0; i < temp.rows; i++) {
+            for (int j = 0; j < temp.cols; j++) {
+                double sum = 0;
+                for (int k = 0; k < a.cols; k++) {
+                    sum += a.data[i][k] * b.data[k][j];
+                }
+                temp.data[i][j] = sum;
+            }
+        }
+        return temp;
+    }
+
+    public void multiply(Matrix a) {
+        for (int i = 0; i < rows; i++) {
+            for (int j = 0; j < cols; j++) {
+                this.data[i][j] *= a.data[i][j];
+            }
+        }
+    }
+    
+    public void multiply(double a) {
+        for (int i = 0; i < rows; i++) {
+            for (int j = 0; j < cols; j++) {
+                this.data[i][j] *= a;
+            }
+        }
+    }
+
+    public void sigmoid() {
+        for (int i = 0; i < rows; i++) {
+            for (int j = 0; j < cols; j++)
+                this.data[i][j] = 1 / (1 + Math.exp(-this.data[i][j]));
+        }
+    }
+
+    public Matrix dsigmoid() {
+        Matrix temp = new Matrix(rows, cols);
+        for (int i = 0; i < rows; i++) {
+            for (int j = 0; j < cols; j++)
+                temp.data[i][j] = this.data[i][j] * (1 - this.data[i][j]);
+        }
+        return temp;
+    }
+}</code></pre>
+
+        <h2>2. The NeuralNetwork Class</h2>
+        <p>
+            This class manages the layers, weights, and biases. It has a <code>feedforward</code> method and a <code>train</code> method.
+        </p>
+        <pre><code class="language-java">public class NeuralNetwork {
+    Matrix weights_ih, weights_ho, bias_h, bias_o;
+    double learning_rate = 0.01;
+
+    public NeuralNetwork(int i, int h, int o) {
+        weights_ih = new Matrix(h, i);
+        weights_ho = new Matrix(o, h);
+        bias_h = new Matrix(h, 1);
+        bias_o = new Matrix(o, 1);
+    }
+
+    public List&lt;Double&gt; feedforward(double[] input_array) {
+        Matrix inputs = Matrix.fromArray(input_array);
+        Matrix hidden = Matrix.multiply(weights_ih, inputs);
+        hidden.add(bias_h);
+        hidden.sigmoid();
+
+        Matrix output = Matrix.multiply(weights_ho, hidden);
+        output.add(bias_o);
+        output.sigmoid();
+
+        return output.toArray();
+    }
+
+    public void train(double[] input_array, double[] target_array) {
+        // Feedforward
+        Matrix inputs = Matrix.fromArray(input_array);
+        Matrix hidden = Matrix.multiply(weights_ih, inputs);
+        hidden.add(bias_h);
+        hidden.sigmoid();
+
+        Matrix outputs = Matrix.multiply(weights_ho, hidden);
+        outputs.add(bias_o);
+        outputs.sigmoid();
+
+        // Calculate Output Errors (Target - Output)
+        Matrix targets = Matrix.fromArray(target_array);
+        Matrix error = Matrix.subtract(targets, outputs);
+        Matrix gradients = outputs.dsigmoid();
+        gradients.multiply(error);
+        gradients.multiply(learning_rate);
+
+        // Calculate Hidden Errors
+        Matrix who_t = Matrix.transpose(weights_ho);
+        Matrix hidden_errors = Matrix.multiply(who_t, error);
+        Matrix hidden_gradient = hidden.dsigmoid();
+        hidden_gradient.multiply(hidden_errors);
+        hidden_gradient.multiply(learning_rate);
+
+        // Update Weights (Deltas)
+        Matrix hidden_T = Matrix.transpose(hidden);
+        Matrix who_delta = Matrix.multiply(gradients, hidden_T);
+        weights_ho.add(who_delta);
+        bias_o.add(gradients);
+
+        Matrix inputs_T = Matrix.transpose(inputs);
+        Matrix wih_delta = Matrix.multiply(hidden_gradient, inputs_T);
+        weights_ih.add(wih_delta);
+        bias_h.add(hidden_gradient);
+    }
+}</code></pre>
+
+        <h2>3. Live Training Demo (XOR Problem)</h2>
+        <p>
+            The XOR problem is classic because a single perceptron cannot solve it. 
+            Inputs: (0,0)->0, (0,1)->1, (1,0)->1, (1,1)->0.
+        </p>
+        
+        <div class="visualization-container" style="display: block;">
+            <div id="console-output" style="background: #000; color: #0f0; padding: 10px; font-family: monospace; height: 200px; overflow-y: auto; white-space: pre-wrap;">
+Click "Start Training" to see the output...
+            </div>
+            <button id="train-btn" style="margin-top: 10px;">Start Training (1000 Epochs)</button>
+        </div>
+
+        <div class="visualization-container" style="align-items: flex-start; margin-top: 40px;">
+            <p><strong>Quiz:</strong> Why do we transpose the Weight matrix (W<sup>T</sup>) during backpropagation for the hidden layer?</p>
+            <button onclick="alert('Correct! To reverse the direction of matrix multiplication and propagate error backwards.')">To match dimensions for error flow</button>
+            <button onclick="alert('Incorrect.')">To make the numbers positive</button>
+            <button onclick="alert('Incorrect.')">It is just a convention</button>
+        </div>
+
+        <div style="text-align: right; margin-top: 50px;">
+            <a href="index.html" style="background: var(--accent-color); color: #000; padding: 10px 20px; text-decoration: none; border-radius: 4px; font-weight: bold;">Back to Overview &crarr;</a>
+        </div>
+    </div>
+
+    <!-- Core Scripts -->
+    <script src="modules/matrix.js"></script>
+    <script src="modules/visualizer.js"></script>
+    <script src="modules/interactive.js"></script>
+    <script src="main.js"></script>
+
+    <script>
+        // Re-implement simplified NeuralNetwork class in JS for the demo
+        class NeuralNetworkJS {
+            constructor(input_nodes, hidden_nodes, output_nodes) {
+                this.input_nodes = input_nodes;
+                this.hidden_nodes = hidden_nodes;
+                this.output_nodes = output_nodes;
+
+                this.weights_ih = new Matrix(this.hidden_nodes, this.input_nodes);
+                this.weights_ho = new Matrix(this.output_nodes, this.hidden_nodes);
+                this.weights_ih.randomize();
+                this.weights_ho.randomize();
+
+                this.bias_h = new Matrix(this.hidden_nodes, 1);
+                this.bias_o = new Matrix(this.output_nodes, 1);
+                this.bias_h.randomize();
+                this.bias_o.randomize();
+                this.learning_rate = 0.1;
+            }
+
+            feedforward(input_array) {
+                let inputs = Matrix.fromArray(input_array);
+                let hidden = Matrix.multiply(this.weights_ih, inputs);
+                hidden.add(this.bias_h);
+                hidden.map(x => 1 / (1 + Math.exp(-x))); // Sigmoid
+
+                let output = Matrix.multiply(this.weights_ho, hidden);
+                output.add(this.bias_o);
+                output.map(x => 1 / (1 + Math.exp(-x))); // Sigmoid
+
+                return output.toArray();
+            }
+
+            train(input_array, target_array) {
+                let inputs = Matrix.fromArray(input_array);
+                let hidden = Matrix.multiply(this.weights_ih, inputs);
+                hidden.add(this.bias_h);
+                hidden.map(x => 1 / (1 + Math.exp(-x)));
+
+                let outputs = Matrix.multiply(this.weights_ho, hidden);
+                outputs.add(this.bias_o);
+                outputs.map(x => 1 / (1 + Math.exp(-x)));
+
+                let targets = Matrix.fromArray(target_array);
+                let output_errors = Matrix.subtract(targets, outputs);
+
+                let gradients = Matrix.map(outputs, x => x * (1 - x));
+                gradients.multiply(output_errors);
+                gradients.multiply(this.learning_rate);
+
+                let hidden_T = Matrix.transpose(hidden);
+                let weight_ho_deltas = Matrix.multiply(gradients, hidden_T);
+
+                this.weights_ho.add(weight_ho_deltas);
+                this.bias_o.add(gradients);
+
+                let who_t = Matrix.transpose(this.weights_ho);
+                let hidden_errors = Matrix.multiply(who_t, output_errors);
+
+                let hidden_gradient = Matrix.map(hidden, x => x * (1 - x));
+                hidden_gradient.multiply(hidden_errors);
+                hidden_gradient.multiply(this.learning_rate);
+
+                let inputs_T = Matrix.transpose(inputs);
+                let weight_ih_deltas = Matrix.multiply(hidden_gradient, inputs_T);
+
+                this.weights_ih.add(weight_ih_deltas);
+                this.bias_h.add(hidden_gradient);
+            }
+        }
+
+        const consoleDiv = document.getElementById('console-output');
+        const btn = document.getElementById('train-btn');
+        
+        let nn;
+        let training_data = [
+            { inputs: [0, 0], targets: [0] },
+            { inputs: [0, 1], targets: [1] },
+            { inputs: [1, 0], targets: [1] },
+            { inputs: [1, 1], targets: [0] }
+        ];
+
+        btn.addEventListener('click', () => {
+            nn = new NeuralNetworkJS(2, 4, 1); 
+            consoleDiv.textContent = "Starting Training...\n";
+            
+            let epoch = 0;
+            const maxEpochs = 2000;
+            
+            function trainLoop() {
+                for (let i = 0; i < 100; i++) { 
+                    let data = training_data[Math.floor(Math.random() * training_data.length)];
+                    nn.train(data.inputs, data.targets);
+                }
+                epoch += 100;
+                
+                if (epoch % 500 === 0) {
+                    let log = `Epoch ${epoch}:\n`;
+                    log += `[0,0] -> ${nn.feedforward([0,0])[0].toFixed(4)}\n`;
+                    log += `[0,1] -> ${nn.feedforward([0,1])[0].toFixed(4)}\n`;
+                    log += `[1,0] -> ${nn.feedforward([1,0])[0].toFixed(4)}\n`;
+                    log += `[1,1] -> ${nn.feedforward([1,1])[0].toFixed(4)}\n`;
+                    consoleDiv.textContent += log + "----------------\n";
+                    consoleDiv.scrollTop = consoleDiv.scrollHeight;
+                }
+
+                if (epoch < maxEpochs) {
+                    requestAnimationFrame(trainLoop);
+                } else {
+                    consoleDiv.textContent += "Training Complete!";
+                }
+            }
+            
+            trainLoop();
+        });
+    </script>
+</body>
+</html>
