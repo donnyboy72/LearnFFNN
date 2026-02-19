@@ -139,6 +139,7 @@
             document.getElementById('sig-val').textContent = val.toFixed(2);
             document.getElementById('sig-out').textContent = sigmoid(val).toFixed(4);
             document.getElementById('sig-der').textContent = dSigmoid(val).toFixed(4);
+            drawGraph('sigmoid-canvas', sigmoid, dSigmoid, val);
         });
 
         // ReLU
@@ -150,6 +151,7 @@
             document.getElementById('relu-val').textContent = val.toFixed(2);
             document.getElementById('relu-out').textContent = relu(val).toFixed(4);
             document.getElementById('relu-der').textContent = dRelu(val).toFixed(4);
+            drawGraph('relu-canvas', relu, dRelu, val);
         });
 
         // Tanh
@@ -161,13 +163,18 @@
             document.getElementById('tanh-val').textContent = val.toFixed(2);
             document.getElementById('tanh-out').textContent = tanh(val).toFixed(4);
             document.getElementById('tanh-der').textContent = dTanh(val).toFixed(4);
+            drawGraph('tanh-canvas', tanh, dTanh, val);
         });
 
         // Handle Resize
         window.addEventListener('resize', () => {
-             drawGraph('sigmoid-canvas', sigmoid, dSigmoid);
-             drawGraph('relu-canvas', relu, dRelu);
-             drawGraph('tanh-canvas', tanh, dTanh);
+             const sigVal = parseFloat(document.getElementById('sig-slider').value);
+             const reluVal = parseFloat(document.getElementById('relu-slider').value);
+             const tanhVal = parseFloat(document.getElementById('tanh-slider').value);
+             
+             drawGraph('sigmoid-canvas', sigmoid, dSigmoid, sigVal);
+             drawGraph('relu-canvas', relu, dRelu, reluVal);
+             drawGraph('tanh-canvas', tanh, dTanh, tanhVal);
         });
     </script>
 </body>
