@@ -35,6 +35,18 @@
             This page covers the essential concepts: Vectors, Matrices, and Activation Functions.
         </p>
 
+        <!-- Key Concepts Box -->
+        <div class="concepts-box">
+            <h3>Key Concepts</h3>
+            <div class="concept-item"><strong>Neuron</strong> The basic unit of a neural network that receives inputs, processes them, and passes an output.</div>
+            <div class="concept-item"><strong>Weight</strong> A value that determines the strength of the connection between two neurons.</div>
+            <div class="concept-item"><strong>Bias</strong> An extra parameter that allows the activation function to be shifted left or right.</div>
+            <div class="concept-item"><strong>Activation</strong> A function that decides if a neuron should "fire" by introducing non-linearity.</div>
+            <div class="concept-item"><strong>Layer</strong> A group of neurons that operate together at a specific depth in the network.</div>
+            <div class="concept-item"><strong>Loss</strong> A metric that measures how far the network's prediction is from the actual target.</div>
+            <div class="concept-item"><strong>Gradient</strong> The direction and rate of fastest increase of the loss function.</div>
+        </div>
+
         <div class="math-concept">
             <h2>1. Vectors & Matrices</h2>
             <p>
@@ -44,14 +56,52 @@
             </p>
             
             <div class="math-block">
-                <strong>Matrix Multiplication (Dot Product):</strong>
-                <p>
-                    When we multiply a matrix <em>W</em> by a vector <em>x</em>, we get a new vector <em>z</em>.
-                    This is a <strong>Linear Transformation</strong>.
-                </p>
+                <strong>The Core Equation:</strong>
                 <p>
                     z = W · x + b
                 </p>
+            </div>
+
+            <div class="derivation-container">
+                <div class="derivation-header" onclick="toggleDerivation(this)">
+                    <span><strong>Full Scalar Form (z = Wx + b)</strong></span>
+                    <span>[Click to Expand]</span>
+                </div>
+                <div class="derivation-content">
+                    <p>When expanded into individual components, the weighted sum for a single neuron <em>j</em> in the next layer is:</p>
+                    <div class="math-block">
+                        zⱼ = (wⱼ₁ · x₁ + wⱼ₂ · x₂ + ... + wⱼₙ · xₙ) + bⱼ
+                    </div>
+                    <p>In summation notation:</p>
+                    <div class="math-block">
+                        zⱼ = Σ (wⱼᵢ · xᵢ) + bⱼ
+                    </div>
+                </div>
+            </div>
+
+            <div class="derivation-container">
+                <div class="derivation-header" onclick="toggleDerivation(this)">
+                    <span><strong>Numeric Matrix Multiplication Example</strong></span>
+                    <span>[Click to Expand]</span>
+                </div>
+                <div class="derivation-content">
+                    <p>Let's calculate the weighted sum for 2 inputs and 1 neuron.</p>
+                    <p><strong>Given:</strong></p>
+                    <ul>
+                        <li>Input <strong>x</strong> = [0.5, 0.8]</li>
+                        <li>Weights <strong>W</strong> = [0.2, 0.4]</li>
+                        <li>Bias <strong>b</strong> = 0.1</li>
+                    </ul>
+                    <p><strong>Step 1: Dot Product (W · x)</strong></p>
+                    <div class="math-block">
+                        (0.2 * 0.5) + (0.4 * 0.8) = 0.1 + 0.32 = 0.42
+                    </div>
+                    <p><strong>Step 2: Add Bias (+ b)</strong></p>
+                    <div class="math-block">
+                        0.42 + 0.1 = 0.52
+                    </div>
+                    <p><strong>Result:</strong> z = 0.52</p>
+                </div>
             </div>
         </div>
 
@@ -93,29 +143,16 @@
                 </div>
                 <p>Output R(x): <strong id="relu-out">0.00</strong> | Derivative R'(x): <strong id="relu-der">0</strong></p>
             </div>
-
-            <h3>Tanh (Hyperbolic Tangent)</h3>
-            <p>Squashes values between -1 and 1. Zero-centered.</p>
-            <div class="math-block">
-                tanh(x) = (eˣ - e⁻ˣ) / (eˣ + e⁻ˣ)
-                <br>
-                tanh'(x) = 1 - tanh(x)²
-            </div>
-            <div class="visualization-container">
-                <canvas id="tanh-canvas" width="600" height="300"></canvas>
-                <div class="controls">
-                    <label>Input x: <span id="tanh-val">0.00</span></label>
-                    <input type="range" id="tanh-slider" min="-5" max="5" step="0.1" value="0">
-                </div>
-                <p>Output tanh(x): <strong id="tanh-out">0.00</strong> | Derivative tanh'(x): <strong id="tanh-der">1.00</strong></p>
-            </div>
         </div>
 
-        <div class="visualization-container" style="align-items: flex-start; margin-top: 40px;">
-            <p><strong>Quiz:</strong> Which activation function outputs values strictly between 0 and 1, making it ideal for probabilities?</p>
-            <button onclick="alert('Correct! Sigmoid squashes values to (0, 1).')">Sigmoid</button>
-            <button onclick="alert('Incorrect. ReLU outputs [0, infinity).')">ReLU</button>
-            <button onclick="alert('Incorrect. Tanh outputs (-1, 1).')">Tanh</button>
+        <div class="why-matters">
+            <h3>Why This Matters</h3>
+            <p>
+                The math on this page forms the "atomic" operations of AI. Matrix multiplication allows us to process 
+                thousands of connections simultaneously, while activation functions allow the network to learn complex, 
+                non-linear relationships in data. Understanding these basics is critical before looking at how data 
+                actually moves through the network.
+            </p>
         </div>
 
         <div style="text-align: right; margin-top: 50px;">
@@ -130,6 +167,12 @@
     <script src="main.js"></script>
 
     <script>
+        function toggleDerivation(header) {
+            const content = header.nextElementSibling;
+            content.classList.toggle('show');
+            header.querySelector('span:last-child').textContent = content.classList.contains('show') ? '[Click to Collapse]' : '[Click to Expand]';
+        }
+
         // Sigmoid
         const sigmoid = (x) => 1 / (1 + Math.exp(-x));
         const dSigmoid = (x) => { let s = sigmoid(x); return s * (1 - s); };
@@ -154,27 +197,12 @@
             drawGraph('relu-canvas', relu, dRelu, val);
         });
 
-        // Tanh
-        const tanh = (x) => Math.tanh(x);
-        const dTanh = (x) => 1 - Math.pow(Math.tanh(x), 2);
-        
-        drawGraph('tanh-canvas', tanh, dTanh);
-        setupSlider('tanh-slider', (val) => {
-            document.getElementById('tanh-val').textContent = val.toFixed(2);
-            document.getElementById('tanh-out').textContent = tanh(val).toFixed(4);
-            document.getElementById('tanh-der').textContent = dTanh(val).toFixed(4);
-            drawGraph('tanh-canvas', tanh, dTanh, val);
-        });
-
         // Handle Resize
         window.addEventListener('resize', () => {
              const sigVal = parseFloat(document.getElementById('sig-slider').value);
              const reluVal = parseFloat(document.getElementById('relu-slider').value);
-             const tanhVal = parseFloat(document.getElementById('tanh-slider').value);
-             
              drawGraph('sigmoid-canvas', sigmoid, dSigmoid, sigVal);
              drawGraph('relu-canvas', relu, dRelu, reluVal);
-             drawGraph('tanh-canvas', tanh, dTanh, tanhVal);
         });
     </script>
 </body>

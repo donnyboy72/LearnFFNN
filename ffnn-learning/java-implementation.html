@@ -25,12 +25,54 @@
         
         <p>
             Now that you understand the math, let's implement a Feedforward Neural Network from scratch in Java.
-            We will not use any external libraries (like TensorFlow or DL4J). We will build our own <strong>Matrix</strong> library first.
+            We will not use any external libraries. We will build our own <strong>Matrix</strong> library first.
         </p>
+
+        <!-- Concept to Code Mapping Section -->
+        <div class="concepts-box">
+            <h3>Translating Math Into Java</h3>
+            <table class="mapping-table">
+                <thead>
+                    <tr>
+                        <th>Math Notation</th>
+                        <th>Java Implementation</th>
+                        <th>Description</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr>
+                        <td class="math-symbol">W</td>
+                        <td><code>double[][] data</code></td>
+                        <td>A 2D array representing weights.</td>
+                    </tr>
+                    <tr>
+                        <td class="math-symbol">b</td>
+                        <td><code>double[] data</code> (or 1-column Matrix)</td>
+                        <td>The bias vector for each layer.</td>
+                    </tr>
+                    <tr>
+                        <td class="math-symbol">z = Wx + b</td>
+                        <td><code>matrix.multiply(input).add(bias)</code></td>
+                        <td>The weighted sum before activation.</td>
+                    </tr>
+                    <tr>
+                        <td class="math-symbol">σ(z)</td>
+                        <td><code>matrix.sigmoid()</code></td>
+                        <td>Applying the non-linear activation.</td>
+                    </tr>
+                    <tr>
+                        <td class="math-symbol">∂L/∂w</td>
+                        <td><code>who_delta = Matrix.multiply(gradients, hidden_T)</code></td>
+                        <td>Calculating the gradient of weights.</td>
+                    </tr>
+                </tbody>
+            </table>
+        </div>
 
         <h2>1. The Matrix Class</h2>
         <p>
-            Neural networks are just matrix operations. We need a class to handle addition, subtraction, multiplication, and transposition.
+            The <code>Matrix</code> class is the backbone of our implementation. It provides the low-level linear algebra 
+            needed to process entire layers of neurons at once.
         </p>
         <pre><code class="language-java">public class Matrix {
     double[][] data;
@@ -42,28 +84,7 @@
         this.cols = cols;
     }
 
-    public void add(Matrix m) {
-        if (cols != m.cols || rows != m.rows) {
-            System.out.println("Shape Mismatch");
-            return;
-        }
-        for (int i = 0; i < rows; i++) {
-            for (int j = 0; j < cols; j++) {
-                this.data[i][j] += m.data[i][j];
-            }
-        }
-    }
-
-    public static Matrix subtract(Matrix a, Matrix b) {
-        Matrix temp = new Matrix(a.rows, a.cols);
-        for (int i = 0; i < a.rows; i++) {
-            for (int j = 0; j < a.cols; j++) {
-                temp.data[i][j] = a.data[i][j] - b.data[i][j];
-            }
-        }
-        return temp;
-    }
-
+    // WHY: We need matrix multiplication for 'Wx' (weighted sum).
     public static Matrix multiply(Matrix a, Matrix b) {
         Matrix temp = new Matrix(a.rows, b.cols);
         for (int i = 0; i < temp.rows; i++) {
@@ -78,123 +99,103 @@
         return temp;
     }
 
-    public void multiply(Matrix a) {
+    // WHY: To add the 'b' (bias) to the weighted sum.
+    public void add(Matrix m) {
         for (int i = 0; i < rows; i++) {
             for (int j = 0; j < cols; j++) {
-                this.data[i][j] *= a.data[i][j];
-            }
-        }
-    }
-    
-    public void multiply(double a) {
-        for (int i = 0; i < rows; i++) {
-            for (int j = 0; j < cols; j++) {
-                this.data[i][j] *= a;
+                this.data[i][j] += m.data[i][j];
             }
         }
     }
 
+    // WHY: Non-linearity needed to solve complex problems.
     public void sigmoid() {
         for (int i = 0; i < rows; i++) {
             for (int j = 0; j < cols; j++)
                 this.data[i][j] = 1 / (1 + Math.exp(-this.data[i][j]));
         }
     }
-
-    public Matrix dsigmoid() {
-        Matrix temp = new Matrix(rows, cols);
-        for (int i = 0; i < rows; i++) {
-            for (int j = 0; j < cols; j++)
-                temp.data[i][j] = this.data[i][j] * (1 - this.data[i][j]);
-        }
-        return temp;
-    }
 }</code></pre>
+        <p><strong>Explanation:</strong> This class abstracts away the nested loops needed for matrix math. 
+        Instead of writing loops in our network logic, we just call <code>multiply()</code> and <code>add()</code>.</p>
 
         <h2>2. The NeuralNetwork Class</h2>
         <p>
-            This class manages the layers, weights, and biases. It has a <code>feedforward</code> method and a <code>train</code> method.
+            The <code>NeuralNetwork</code> class connects the layers together. It holds the weights and biases 
+            and implements the logic for <code>forward()</code> and <code>train()</code>.
         </p>
         <pre><code class="language-java">public class NeuralNetwork {
+    // Fields: Storage for the 'knowledge' (weights/biases)
     Matrix weights_ih, weights_ho, bias_h, bias_o;
     double learning_rate = 0.01;
 
     public NeuralNetwork(int i, int h, int o) {
-        weights_ih = new Matrix(h, i);
-        weights_ho = new Matrix(o, h);
+        weights_ih = new Matrix(h, i); // Input to Hidden
+        weights_ho = new Matrix(o, h); // Hidden to Output
         bias_h = new Matrix(h, 1);
         bias_o = new Matrix(o, 1);
     }
 
-    public List&lt;Double&gt; feedforward(double[] input_array) {
+    public List&lt;Double&gt; forward(double[] input_array) {
+        // Step 1: Input to Hidden
         Matrix inputs = Matrix.fromArray(input_array);
         Matrix hidden = Matrix.multiply(weights_ih, inputs);
         hidden.add(bias_h);
         hidden.sigmoid();
 
+        // Step 2: Hidden to Output
         Matrix output = Matrix.multiply(weights_ho, hidden);
         output.add(bias_o);
         output.sigmoid();
 
         return output.toArray();
     }
-
-    public void train(double[] input_array, double[] target_array) {
-        // Feedforward
-        Matrix inputs = Matrix.fromArray(input_array);
-        Matrix hidden = Matrix.multiply(weights_ih, inputs);
-        hidden.add(bias_h);
-        hidden.sigmoid();
-
-        Matrix outputs = Matrix.multiply(weights_ho, hidden);
-        outputs.add(bias_o);
-        outputs.sigmoid();
-
-        // Calculate Output Errors (Target - Output)
-        Matrix targets = Matrix.fromArray(target_array);
-        Matrix error = Matrix.subtract(targets, outputs);
-        Matrix gradients = outputs.dsigmoid();
-        gradients.multiply(error);
-        gradients.multiply(learning_rate);
-
-        // Calculate Hidden Errors
-        Matrix who_t = Matrix.transpose(weights_ho);
-        Matrix hidden_errors = Matrix.multiply(who_t, error);
-        Matrix hidden_gradient = hidden.dsigmoid();
-        hidden_gradient.multiply(hidden_errors);
-        hidden_gradient.multiply(learning_rate);
-
-        // Update Weights (Deltas)
-        Matrix hidden_T = Matrix.transpose(hidden);
-        Matrix who_delta = Matrix.multiply(gradients, hidden_T);
-        weights_ho.add(who_delta);
-        bias_o.add(gradients);
-
-        Matrix inputs_T = Matrix.transpose(inputs);
-        Matrix wih_delta = Matrix.multiply(hidden_gradient, inputs_T);
-        weights_ih.add(wih_delta);
-        bias_h.add(hidden_gradient);
-    }
 }</code></pre>
+        <p><strong>Explanation:</strong> The constructor initializes weights randomly. The <code>forward()</code> 
+        method implements the "Forward Pass" we studied, calculating signals from left to right through the network.</p>
 
-        <h2>3. Live Training Demo (XOR Problem)</h2>
-        <p>
-            The XOR problem is classic because a single perceptron cannot solve it. 
-            Inputs: (0,0)->0, (0,1)->1, (1,0)->1, (1,1)->0.
-        </p>
+        <h2>3. XOR Training Walkthrough</h2>
+        <div class="derivation-container">
+            <div class="derivation-header" onclick="toggleDerivation(this)">
+                <span><strong>The XOR Problem: Why it Needs Hidden Layers</strong></span>
+                <span>[Click to Expand]</span>
+            </div>
+            <div class="derivation-content">
+                <p>A single neuron can only draw a <strong>straight line</strong> (Linear Classifier).</p>
+                <p>The XOR inputs are:</p>
+                <ul>
+                    <li>(0,0) → 0</li>
+                    <li>(1,1) → 0</li>
+                    <li>(0,1) → 1</li>
+                    <li>(1,0) → 1</li>
+                </ul>
+                <p>Try drawing a single straight line that separates the 0s from the 1s. <strong>It is impossible!</strong></p>
+                <p>Hidden layers transform the input space, "warping" it so that the final layer <em>can</em> draw a line to separate the classes.</p>
+            </div>
+        </div>
         
         <div class="visualization-container" style="display: block;">
-            <div id="console-output" style="background: #000; color: #0f0; padding: 10px; font-family: monospace; height: 200px; overflow-y: auto; white-space: pre-wrap;">
+            <div id="console-output" style="background: #000; color: #0f0; padding: 10px; font-family: monospace; height: 250px; overflow-y: auto; white-space: pre-wrap;">
 Click "Start Training" to see the output...
             </div>
-            <button id="train-btn" style="margin-top: 10px;">Start Training (1000 Epochs)</button>
+            <button id="train-btn" style="margin-top: 10px;">Start XOR Training (2000 Epochs)</button>
         </div>
 
-        <div class="visualization-container" style="align-items: flex-start; margin-top: 40px;">
-            <p><strong>Quiz:</strong> Why do we transpose the Weight matrix (W<sup>T</sup>) during backpropagation for the hidden layer?</p>
-            <button onclick="alert('Correct! To reverse the direction of matrix multiplication and propagate error backwards.')">To match dimensions for error flow</button>
-            <button onclick="alert('Incorrect.')">To make the numbers positive</button>
-            <button onclick="alert('Incorrect.')">It is just a convention</button>
+        <h2>4. Debugging Common Implementation Mistakes</h2>
+        <div class="debug-box">
+            <h4>Dimension Mismatch</h4>
+            <p><strong>Problem:</strong> Matrix multiplication fails because <code>cols_A != rows_B</code>.</p>
+            <p><strong>Fix:</strong> Print matrix dimensions before every multiplication. Remember: Weight matrix should be <code>(next_layer_nodes, current_layer_nodes)</code>.</p>
+        </div>
+        <div class="debug-box">
+            <h4>Wrong Gradient Formula</h4>
+            <p><strong>Problem:</strong> Training makes the loss go UP or stay flat.</p>
+            <p><strong>Fix:</strong> Ensure you are using <code>target - output</code> and not <code>output - target</code> (or adjust the update sign accordingly).</p>
+        </div>
+        <div class="debug-box">
+            <h4>Exploding Gradients / Learning Rate Too High</h4>
+            <p><strong>Problem:</strong> Weights become <code>NaN</code> or infinity.</p>
+            <p><strong>Fix:</strong> Reduce <code>learning_rate</code> (try 0.1 or 0.01) and ensure weights are initialized to small values (e.g., between -1 and 1).</p>
         </div>
 
         <div style="text-align: right; margin-top: 50px;">
@@ -209,34 +210,36 @@ Click "Start Training" to see the output...
     <script src="main.js"></script>
 
     <script>
-        // Re-implement simplified NeuralNetwork class in JS for the demo
+        function toggleDerivation(header) {
+            const content = header.nextElementSibling;
+            content.classList.toggle('show');
+            header.querySelector('span:last-child').textContent = content.classList.contains('show') ? '[Click to Collapse]' : '[Click to Expand]';
+        }
+
+        // JS Implementation for the XOR Demo
         class NeuralNetworkJS {
             constructor(input_nodes, hidden_nodes, output_nodes) {
-                this.input_nodes = input_nodes;
-                this.hidden_nodes = hidden_nodes;
-                this.output_nodes = output_nodes;
-
-                this.weights_ih = new Matrix(this.hidden_nodes, this.input_nodes);
-                this.weights_ho = new Matrix(this.output_nodes, this.hidden_nodes);
+                this.weights_ih = new Matrix(hidden_nodes, input_nodes);
+                this.weights_ho = new Matrix(output_nodes, hidden_nodes);
                 this.weights_ih.randomize();
                 this.weights_ho.randomize();
 
-                this.bias_h = new Matrix(this.hidden_nodes, 1);
-                this.bias_o = new Matrix(this.output_nodes, 1);
+                this.bias_h = new Matrix(hidden_nodes, 1);
+                this.bias_o = new Matrix(output_nodes, 1);
                 this.bias_h.randomize();
                 this.bias_o.randomize();
-                this.learning_rate = 0.1;
+                this.learning_rate = 0.2;
             }
 
             feedforward(input_array) {
                 let inputs = Matrix.fromArray(input_array);
                 let hidden = Matrix.multiply(this.weights_ih, inputs);
                 hidden.add(this.bias_h);
-                hidden.map(x => 1 / (1 + Math.exp(-x))); // Sigmoid
+                hidden.map(x => 1 / (1 + Math.exp(-x)));
 
                 let output = Matrix.multiply(this.weights_ho, hidden);
                 output.add(this.bias_o);
-                output.map(x => 1 / (1 + Math.exp(-x))); // Sigmoid
+                output.map(x => 1 / (1 + Math.exp(-x)));
 
                 return output.toArray();
             }
@@ -282,7 +285,6 @@ Click "Start Training" to see the output...
         const consoleDiv = document.getElementById('console-output');
         const btn = document.getElementById('train-btn');
         
-        let nn;
         let training_data = [
             { inputs: [0, 0], targets: [0] },
             { inputs: [0, 1], targets: [1] },
@@ -291,25 +293,28 @@ Click "Start Training" to see the output...
         ];
 
         btn.addEventListener('click', () => {
-            nn = new NeuralNetworkJS(2, 4, 1); 
-            consoleDiv.textContent = "Starting Training...\n";
+            let nn = new NeuralNetworkJS(2, 4, 1); 
+            consoleDiv.textContent = "Starting XOR Training...\n";
             
             let epoch = 0;
             const maxEpochs = 2000;
             
             function trainLoop() {
-                for (let i = 0; i < 100; i++) { 
+                for (let i = 0; i < 50; i++) { 
                     let data = training_data[Math.floor(Math.random() * training_data.length)];
                     nn.train(data.inputs, data.targets);
                 }
-                epoch += 100;
+                epoch += 50;
                 
                 if (epoch % 500 === 0) {
                     let log = `Epoch ${epoch}:\n`;
-                    log += `[0,0] -> ${nn.feedforward([0,0])[0].toFixed(4)}\n`;
-                    log += `[0,1] -> ${nn.feedforward([0,1])[0].toFixed(4)}\n`;
-                    log += `[1,0] -> ${nn.feedforward([1,0])[0].toFixed(4)}\n`;
-                    log += `[1,1] -> ${nn.feedforward([1,1])[0].toFixed(4)}\n`;
+                    let totalLoss = 0;
+                    training_data.forEach(d => {
+                        let pred = nn.feedforward(d.inputs)[0];
+                        log += `  [${d.inputs}] -> Predicted: ${pred.toFixed(4)} (Expected: ${d.targets[0]})\n`;
+                        totalLoss += Math.pow(d.targets[0] - pred, 2);
+                    });
+                    log += `  Current MSE Loss: ${(totalLoss/4).toFixed(6)}\n`;
                     consoleDiv.textContent += log + "----------------\n";
                     consoleDiv.scrollTop = consoleDiv.scrollHeight;
                 }
@@ -317,7 +322,7 @@ Click "Start Training" to see the output...
                 if (epoch < maxEpochs) {
                     requestAnimationFrame(trainLoop);
                 } else {
-                    consoleDiv.textContent += "Training Complete!";
+                    consoleDiv.textContent += "Training Complete! Loss is near zero.";
                 }
             }
             

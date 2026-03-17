@@ -44,49 +44,99 @@
             It calculates the gradient (slope) of the Loss Function with respect to every weight and bias in the network.
         </p>
 
+        <!-- Key Concepts Box -->
+        <div class="concepts-box">
+            <h3>Key Concepts</h3>
+            <div class="concept-item"><strong>Gradient Descent</strong> An optimization algorithm that moves weights in the opposite direction of the gradient to minimize loss.</div>
+            <div class="concept-item"><strong>Chain Rule</strong> A calculus rule used to calculate the derivative of a function formed by the composition of other functions.</div>
+            <div class="concept-item"><strong>Delta (δ)</strong> The "local error" of a neuron, representing how much its weighted sum (z) affects the total loss.</div>
+            <div class="concept-item"><strong>Learning Rate (η)</strong> A scalar that controls the size of the weight updates (step size).</div>
+            <div class="concept-item"><strong>Backprop</strong> Short for "Backpropagation of Error."</div>
+        </div>
+
         <h2>1. The Loss Function</h2>
         <p>
-            We need a way to measure how "wrong" the network is. We use <strong>Mean Squared Error (MSE)</strong> 
-            (often with a 1/2 factor to make derivatives cleaner).
+            We need a way to measure how "wrong" the network is. We use <strong>Mean Squared Error (MSE)</strong>.
         </p>
         <div class="math-block">
             L = ½(target - output)²
         </div>
 
-        <h2>2. The Chain Rule</h2>
+        <div class="derivation-container">
+            <div class="derivation-header" onclick="toggleDerivation(this)">
+                <span><strong>Derivation: ∂L/∂a (Loss wrt Output)</strong></span>
+                <span>[Click to Expand]</span>
+            </div>
+            <div class="derivation-content">
+                <p>We use the power rule to differentiate the MSE loss with respect to the output activation (<em>a</em>):</p>
+                <div class="math-block">
+                    ∂L/∂a = ½ * 2 * (a - target)¹ * (1) <br>
+                    <strong>∂L/∂a = (a - target)</strong>
+                </div>
+            </div>
+        </div>
+
+        <h2>2. The Chain Rule Step-by-Step</h2>
         <p>
-            To find how much a weight <em>w</em> contributed to the error <em>L</em>, we use the Chain Rule of Calculus.
+            To find how much a weight <em>w</em> contributed to the error <em>L</em>, we break it into parts:
         </p>
         <div class="math-block">
-            ∂L/∂w = (∂L/∂a) * (∂a/∂z) * (∂z/∂w)
+            <strong>∂L/∂w = (∂L/∂a) * (∂a/∂z) * (∂z/∂w)</strong>
         </div>
 
-        <h2>3. Step-by-Step Derivation</h2>
-        
-        <div class="derivation-step">
-            <h3>Output Layer Gradients</h3>
-            <p>Let <em>y</em> be the target and <em>aᴸ</em> be the output activation.</p>
-            <p><strong>Step 1:</strong> How does Loss change with Output?</p>
-            <div class="math-block">∂L/∂aᴸ = (aᴸ - y)</div>
-            
-            <p><strong>Step 2:</strong> How does Output change with Input Sum (z)? (Derivative of Sigmoid)</p>
-            <div class="math-block">∂aᴸ/∂zᴸ = σ'(zᴸ) = aᴸ(1 - aᴸ)</div>
-            
-            <p><strong>Step 3:</strong> Define "Delta" (δ) for the output layer:</p>
-            <div class="math-block">δᴸ = (aᴸ - y) * σ'(zᴸ)</div>
+        <div class="derivation-container">
+            <div class="derivation-header" onclick="toggleDerivation(this)">
+                <span><strong>Full Derivation: Output Layer Weight Gradient</strong></span>
+                <span>[Click to Expand]</span>
+            </div>
+            <div class="derivation-content">
+                <p><strong>Part 1: How Loss changes with Output (∂L/∂a)</strong></p>
+                <div class="math-block">∂L/∂a = (a - target)</div>
+                
+                <p><strong>Part 2: How Output changes with weighted sum (∂a/∂z)</strong></p>
+                <p>Since a = σ(z), we need the derivative of Sigmoid:</p>
+                <div class="math-block">σ'(z) = a(1 - a)</div>
+                
+                <p><strong>Part 3: How weighted sum changes with Weight (∂z/∂w)</strong></p>
+                <p>Since z = w * a_prev + b:</p>
+                <div class="math-block">∂z/∂w = a_prev</div>
 
-            <p><strong>Final Gradient for Weight:</strong></p>
-            <div class="math-block">∂L/∂wᴸ = δᴸ * aᴸ⁻¹</div>
+                <p><strong>Conclusion: The Output Delta (δ)</strong></p>
+                <p>We combine Part 1 and Part 2 into a single term called <em>Delta</em>:</p>
+                <div class="math-block">δ = (a - target) * a(1 - a)</div>
+                
+                <p><strong>Final Gradient:</strong></p>
+                <div class="math-block">∂L/∂w = δ * a_prev</div>
+                <div class="math-block">∂L/∂b = δ * 1</div>
+            </div>
         </div>
 
-        <div class="derivation-step">
-            <h3>Hidden Layer Gradients</h3>
-            <p>We propagate the error backwards using the weights.</p>
-            <p><strong>Step 1:</strong> Calculate Delta for hidden layer <em>l</em>:</p>
-            <div class="math-block">δˡ = (transpose(Wˡ⁺¹) · δˡ⁺¹) * σ'(zˡ)</div>
-            
-            <p><strong>Final Gradient for Weight:</strong></p>
-            <div class="math-block">∂L/∂wˡ = δˡ * aˡ⁻¹</div>
+        <h2>3. Hidden Layer Gradients</h2>
+        <p>
+            Hidden layers don't have a "target." Their "error" is calculated by seeing how much they 
+            contributed to the error in the <em>next</em> layer.
+        </p>
+        <div class="math-block">
+            <strong>δˡ = (transpose(Wˡ⁺¹) · δˡ⁺¹) * σ'(zˡ)</strong>
+        </div>
+
+        <div class="derivation-container">
+            <div class="derivation-header" onclick="toggleDerivation(this)">
+                <span><strong>Step-by-Step: Hidden Layer Delta Derivation</strong></span>
+                <span>[Click to Expand]</span>
+            </div>
+            <div class="derivation-content">
+                <p><strong>Step 1: Propagate next layer's error backwards</strong></p>
+                <p>Multiply the delta of the next layer (δˡ⁺¹) by the weights connecting current layer to next (Wˡ⁺¹). 
+                   We use the transpose because we are moving backwards.</p>
+                
+                <p><strong>Step 2: Apply Activation Gradient</strong></p>
+                <p>Multiply by the derivative of the current layer's activation function σ'(zˡ).</p>
+                
+                <p><strong>Step 3: Update Weights</strong></p>
+                <p>Just like the output layer:</p>
+                <div class="math-block">∂L/∂wˡ = δˡ * aˡ⁻¹</div>
+            </div>
         </div>
 
         <h2>Interactive Gradient Descent</h2>
@@ -127,11 +177,13 @@
             <button id="step-btn" style="margin-top: 20px; width: 100%;">Perform One Training Step (Learning Rate = 0.5)</button>
         </div>
 
-        <div class="visualization-container" style="align-items: flex-start; margin-top: 40px;">
-            <p><strong>Quiz:</strong> If increasing weight <em>w</em> causes the Loss <em>L</em> to increase, what is the sign of the gradient ∂L/∂w?</p>
-            <button onclick="alert('Correct! The slope is positive. To reduce loss, we must subtract this positive value (move left).')">Positive</button>
-            <button onclick="alert('Incorrect. If the gradient were negative, increasing w would decrease L.')">Negative</button>
-            <button onclick="alert('Incorrect.')">Zero</button>
+        <div class="why-matters">
+            <h3>Why This Matters</h3>
+            <p>
+                Backpropagation is the engine of modern AI. Without it, we would have no way to "correct" 
+                the millions of parameters in a large network. It connects the high-level goal (reducing error) 
+                to the low-level mechanical updates of weights and biases.
+            </p>
         </div>
 
         <div style="text-align: right; margin-top: 50px;">
@@ -146,6 +198,12 @@
     <script src="main.js"></script>
 
     <script>
+        function toggleDerivation(header) {
+            const content = header.nextElementSibling;
+            content.classList.toggle('show');
+            header.querySelector('span:last-child').textContent = content.classList.contains('show') ? '[Click to Collapse]' : '[Click to Expand]';
+        }
+
         let w = 0.5;
         let b = 0.0;
         const x = 1.0;
